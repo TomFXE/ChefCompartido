@@ -1,27 +1,62 @@
 <template>
-  <div class="catalog">
-    <h2>Catálogo de Recetas</h2>
-    <div class="grid">
-      <div v-for="recipe in recipes" :key="recipe.id" class="card">
-        <h3>{{ recipe.title }}</h3>
-        <p><strong>Tiempo:</strong> {{ recipe.time }} mins</p>
-        <p><strong>Dificultad:</strong> {{ recipe.difficulty }}</p>
-      </div>
+  <div class="catalog-container">
+    <RecipeSearchFilter @filter-change="handleFilterChange" />
+
+    <div v-if="filteredRecipes.length > 0" class="grid">
+      <RecipeCard
+        v-for="recipe in filteredRecipes"
+        :key="recipe.id"
+        :recipe="recipe"
+        @select="$emit('select-recipe', recipe.id)"
+      />
+    </div>
+    <div v-else class="empty-state">
+      <p>No se encontraron recetas que coincidan con los filtros seleccionados.</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { recipeService } from '../services/recipeService';
+import RecipeCard from './RecipeCard.vue';
+import RecipeSearchFilter from './RecipeSearchFilter.vue';
 
-const recipes = ref([
-  { id: 1, title: 'Pasta Carbonara Tradicional', time: 25, difficulty: 'Fácil' },
-  { id: 2, title: 'Tacos al Pastor Caseros', time: 45, difficulty: 'Media' },
-  { id: 3, title: 'Ensalada César con Pollo', time: 15, difficulty: 'Fácil' }
-]);
+defineEmits(['select-recipe']);
+
+const recipes = ref(recipeService.getAll());
+const filters = ref({
+  query: '',
+  category: '',
+  difficulty: '',
+  maxTime: 90
+});
+
+const handleFilterChange = (newFilters) => {
+  filters.value = newFilters;
+};
+
+const filteredRecipes = computed(() => {
+  return recipes.value.filter((r) => {
+    const matchesQuery =
+      !filters.value.query ||
+      r.title.toLowerCase().includes(filters.value.query.toLowerCase()) ||
+      r.ingredients.some((i) => i.toLowerCase().includes(filters.value.query.toLowerCase()));
+
+    const matchesCategory = !filters.value.category || r.category === filters.value.category;
+    const matchesDifficulty = !filters.value.difficulty || r.difficulty === filters.value.difficulty;
+    const matchesTime = r.time <= filters.value.maxTime;
+
+    return matchesQuery && matchesCategory && matchesDifficulty && matchesTime;
+  });
+});
 </script>
 
 <style scoped>
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
-.card { padding: 1rem; border: 1px solid #e0e0e0; border-radius: 6px; background-color: #ffffff; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.2rem;
+}
+.empty-state { text-align: center; padding: 2rem; color: #64748b; }
 </style>
