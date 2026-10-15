@@ -15,7 +15,7 @@ import { ref } from 'vue';
 
 const user = ref({
   name: 'Tomás Jiménez',
-  email: 'tomas@example.com'
+  email: 'tomas.jimenez9087@alumnos.udg.mx'
 });
 
 const editProfile = () => {
