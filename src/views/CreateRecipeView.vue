@@ -25,6 +25,12 @@
 
       <textarea v-model="form.description" placeholder="Breve descripción" rows="2" required></textarea>
 
+      <div class="dynamic-section">
+        <h3>Fotografía de la Receta</h3>
+        <input type="file" @change="handleFileUpload" accept="image/png, image/jpeg" />
+        <p v-if="imageError" class="error">{{ imageError }}</p>
+      </div>
+
       <!-- Lista dinámica de Ingredientes -->
       <div class="dynamic-section">
         <h3>Ingredientes</h3>
@@ -53,6 +59,22 @@
 <script setup>
 import { reactive } from 'vue';
 import { recipeService } from '../services/recipeService';
+import { ref } from 'vue';
+
+const imageError = ref('');
+
+const handleFileUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    if (file.size > 2 * 1024 * 1024) { // Límite de 2MB
+      imageError.value = 'La imagen es muy pesada. Máximo 2MB.';
+      return;
+    }
+    imageError.value = '';
+    // Simulamos la conversión a URL local para previsualizar y guardar
+    form.image = URL.createObjectURL(file);
+  }
+};
 
 const emit = defineEmits(['recipe-created']);
 

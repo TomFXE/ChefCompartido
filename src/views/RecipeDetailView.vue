@@ -9,6 +9,10 @@
     </p>
     <p class="description">{{ recipe.description }}</p>
 
+    <div v-if="recipe.image" class="image-container">
+      <img :src="recipe.image" :alt="recipe.title" class="recipe-image" />
+    </div>
+
     <div class="content-grid">
       <div class="ingredients-box">
         <h3>Ingredientes</h3>
@@ -70,4 +74,16 @@ defineEmits(['back']);
 }
 ul, ol { padding-left: 1.2rem; }
 li { margin-bottom: 0.5rem; line-height: 1.4; }
+.image-container {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.recipe-image {
+  max-width: 100%;
+  max-height: 350px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
 </style>
