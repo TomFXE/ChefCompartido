@@ -1,0 +1,420 @@
+--- RecipeCatalog.vue ---
+<template>
+  <div class="catalog-container">
+    <RecipeSearchFilter @filter-change="handleFilterChange" />
+
+    <div v-if="filteredRecipes.length > 0" class="grid">
+      <RecipeCard
+        v-for="recipe in filteredRecipes"
+        :key="recipe.id"
+        :recipe="recipe"
+        @select="$emit('select-recipe', recipe.id)"
+      />
+    </div>
+    <div v-else class="empty-state">
+      <p>No se encontraron recetas que coincidan con los filtros seleccionados.</p>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue';
+import { recipeService } from '../services/recipeService';
+import RecipeCard from './RecipeCard.vue';
+import RecipeSearchFilter from './RecipeSearchFilter.vue';
+
+defineEmits(['select-recipe']);
+
+const recipes = ref(recipeService.getAll());
+const filters = ref({
+  query: '',
+  category: '',
+  difficulty: '',
+  maxTime: 90
+});
+
+const handleFilterChange = (newFilters) => {
+  filters.value = newFilters;
+};
+
+const filteredRecipes = computed(() => {
+  return recipes.value.filter((r) => {
+    const matchesQuery =
+      !filters.value.query ||
+      r.title.toLowerCase().includes(filters.value.query.toLowerCase()) ||
+      r.ingredients.some((i) => i.toLowerCase().includes(filters.value.query.toLowerCase()));
+
+    const matchesCategory = !filters.value.category || r.category === filters.value.category;
+    const matchesDifficulty = !filters.value.difficulty || r.difficulty === filters.value.difficulty;
+    const matchesTime = r.time <= filters.value.maxTime;
+
+    return matchesQuery && matchesCategory && matchesDifficulty && matchesTime;
+  });
+});
+</script>
+
+<style scoped>
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.2rem;
+}
+.empty-state { text-align: center; padding: 2rem; color: #64748b; }
+</style>
+
+--- RecipeCard.vue ---
+
+<template>
+  <div class="recipe-card" @click="$emit('select', recipe.id)">
+    <div class="card-header">
+      <span class="badge category">{{ recipe.category }}</span>
+      <span class="badge difficulty" :class="recipe.difficulty.toLowerCase()">{{ recipe.difficulty }}</span>
+    </div>
+    <h3>{{ recipe.title }}</h3>
+    <p class="description">{{ recipe.description }}</p>
+    <div class="card-footer">
+      <span>⏱ {{ recipe.time }} mins</span>
+      <button class="btn-detail">Ver Detalle</button>
+    </div>
+  </div>
+</template>
+
+<script setup>
+defineProps({
+  recipe: {
+    type: Object,
+    required: true
+  }
+});
+
+defineEmits(['select']);
+</script>
+
+<style scoped>
+.recipe-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.2rem;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.recipe-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+.category { background: #e0f2fe; color: #0369a1; }
+.difficulty.fácil { background: #dcfce7; color: #15803d; }
+.difficulty.media { background: #fef9c3; color: #a16207; }
+.difficulty.difícil { background: #fee2e2; color: #b91c1c; }
+h3 { margin: 0.5rem 0; font-size: 1.1rem; color: #1e293b; }
+.description { font-size: 0.85rem; color: #64748b; margin-bottom: 1rem; line-height: 1.3; }
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #475569;
+}
+.btn-detail {
+  background: #42b983;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+</style>
+
+--- LoginView.vue ---
+
+<template>
+  <div class="auth-container">
+    <h2>Iniciar Sesión - ChefCompartido</h2>
+    <form @submit.prevent="handleLogin">
+      <input v-model="email" type="email" placeholder="Correo electrónico" required />
+      <input v-model="password" type="password" placeholder="Contraseña" required />
+      <button type="submit">Ingresar</button>
+    </form>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+import { authService } from '../services/authService';
+
+const email = ref('');
+const password = ref('');
+
+const handleLogin = async () => {
+  await authService.login(email.value, password.value);
+  alert('¡Inicio de sesión exitoso!');
+};
+</script>
+
+<style scoped>
+.auth-container { max-width: 400px; margin: 2rem auto; padding: 1.5rem; border: 1px solid #ccc; border-radius: 8px; }
+input { display: block; width: 100%; margin-bottom: 1rem; padding: 0.5rem; }
+button { width: 100%; padding: 0.5rem; background-color: #42b983; color: white; border: none; cursor: pointer; }
+</style>
+
+--- RegisterView.vue ---
+
+<template>
+  <div class="auth-container">
+    <h2>Crear Cuenta - ChefCompartido</h2>
+    <form @submit.prevent="handleRegister">
+      <input v-model="name" type="text" placeholder="Nombre completo" required />
+      <input v-model="email" type="email" placeholder="Correo electrónico" required />
+      <input v-model="password" type="password" placeholder="Contraseña" required />
+      <button type="submit">Registrarse</button>
+    </form>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+import { authService } from '../services/authService';
+
+const name = ref('');
+const email = ref('');
+const password = ref('');
+
+const handleRegister = async () => {
+  await authService.register({ name: name.value, email: email.value, password: password.value });
+  alert('¡Cuenta creada exitosamente!');
+};
+</script>
+
+<style scoped>
+.auth-container { max-width: 400px; margin: 2rem auto; padding: 1.5rem; border: 1px solid #ccc; border-radius: 8px; }
+input { display: block; width: 100%; margin-bottom: 1rem; padding: 0.5rem; }
+button { width: 100%; padding: 0.5rem; background-color: #35495e; color: white; border: none; cursor: pointer; }
+</style>
+
+--- ProfileView.vue ---
+
+<template>
+  <div class="profile-container">
+    <h2>Mi Perfil</h2>
+    <div class="profile-card">
+      <p><strong>Nombre:</strong> {{ user.name }}</p>
+      <p><strong>Correo:</strong> {{ user.email }}</p>
+      <p><strong>Biografía:</strong> Aficionado a la cocina italiana y mexicana.</p>
+      <button @click="editProfile">Editar Datos</button>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const user = ref({
+  name: 'Tomás Jiménez',
+  email: 'tomas.jimenez9087@alumnos.udg.mx'
+});
+
+const editProfile = () => {
+  alert('Modo edición activado');
+};
+</script>
+
+<style scoped>
+.profile-container { max-width: 500px; margin: 2rem auto; }
+.profile-card { padding: 1.5rem; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; }
+</style>
+
+--- CreateRecipeView.vue ---
+
+<template>
+  <div class="create-container">
+    <h2>Publicar Nueva Receta</h2>
+    <form @submit.prevent="submitRecipe">
+      <input v-model="form.title" type="text" placeholder="Título de la receta" required />
+      
+      <div class="row">
+        <select v-model="form.category" required>
+          <option value="" disabled>Selecciona Categoría</option>
+          <option value="Pasta">Pasta</option>
+          <option value="Mexicana">Mexicana</option>
+          <option value="Ensaladas">Ensaladas</option>
+          <option value="Postres">Postres</option>
+        </select>
+
+        <input v-model="form.time" type="number" placeholder="Tiempo (mins)" min="5" required />
+
+        <select v-model="form.difficulty" required>
+          <option value="" disabled>Dificultad</option>
+          <option value="Fácil">Fácil</option>
+          <option value="Media">Media</option>
+          <option value="Difícil">Difícil</option>
+        </select>
+      </div>
+
+      <textarea v-model="form.description" placeholder="Breve descripción" rows="2" required></textarea>
+
+      <div class="dynamic-section">
+        <h3>Fotografía de la Receta</h3>
+        <input type="file" @change="handleFileUpload" accept="image/png, image/jpeg" />
+        <p v-if="imageError" class="error">{{ imageError }}</p>
+      </div>
+
+      <!-- Lista dinámica de Ingredientes -->
+      <div class="dynamic-section">
+        <h3>Ingredientes</h3>
+        <div v-for="(ing, idx) in form.ingredients" :key="idx" class="dynamic-row">
+          <input v-model="form.ingredients[idx]" placeholder="Ej. 200g de harina" required />
+          <button type="button" @click="removeIngredient(idx)" class="btn-remove">X</button>
+        </div>
+        <button type="button" @click="addIngredient" class="btn-add">+ Agregar Ingrediente</button>
+      </div>
+
+      <!-- Lista dinámica de Pasos -->
+      <div class="dynamic-section">
+        <h3>Pasos de Preparación</h3>
+        <div v-for="(step, idx) in form.steps" :key="idx" class="dynamic-row">
+          <input v-model="form.steps[idx]" placeholder="Ej. Mezclar los ingredientes secos" required />
+          <button type="button" @click="removeStep(idx)" class="btn-remove">X</button>
+        </div>
+        <button type="button" @click="addStep" class="btn-add">+ Agregar Paso</button>
+      </div>
+
+      <button type="submit" class="btn-submit">Guardar y Publicar Receta</button>
+    </form>
+  </div>
+</template>
+
+<script setup>
+import { reactive } from 'vue';
+import { recipeService } from '../services/recipeService';
+import { ref } from 'vue';
+
+const imageError = ref('');
+
+const handleFileUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    if (file.size > 2 * 1024 * 1024) { // Límite de 2MB
+      imageError.value = 'La imagen es muy pesada. Máximo 2MB.';
+      return;
+    }
+    imageError.value = '';
+    // Simulamos la conversión a URL local para previsualizar y guardar
+    form.image = URL.createObjectURL(file);
+  }
+};
+
+const emit = defineEmits(['recipe-created']);
+
+const form = reactive({
+  title: '',
+  category: '',
+  time: '',
+  difficulty: '',
+  description: '',
+  ingredients: [''],
+  steps: ['']
+});
+
+const addIngredient = () => form.ingredients.push('');
+const removeIngredient = (idx) => form.ingredients.splice(idx, 1);
+
+const addStep = () => form.steps.push('');
+const removeStep = (idx) => form.steps.splice(idx, 1);
+
+const submitRecipe = async () => {
+  await recipeService.create({ ...form });
+  alert('¡Receta publicada exitosamente!');
+  emit('recipe-created');
+};
+</script>
+
+<style scoped>
+.create-container {
+  max-width: 650px;
+  margin: 0 auto;
+  background: #ffffff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+input, select, textarea {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 0.8rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+.row { display: flex; gap: 0.5rem; }
+.dynamic-section { margin-bottom: 1.2rem; }
+.dynamic-row { display: flex; gap: 0.5rem; margin-bottom: 0.4rem; }
+.btn-remove { background: #ef4444; color: white; border: none; padding: 0.4rem 0.6rem; border-radius: 4px; cursor: pointer; }
+.btn-add { background: #0284c7; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; }
+.btn-submit { width: 100%; background: #16a34a; color: white; border: none; padding: 0.8rem; border-radius: 6px; font-weight: bold; cursor: pointer; }
+</style>
+
+--- EditRecipeView.vue ---
+
+<template>
+  <div class="edit-container">
+    <h2>Editar o Eliminar Receta</h2>
+    <form @submit.prevent="handleUpdate">
+      <input v-model="form.title" type="text" placeholder="Título" required />
+      <textarea v-model="form.description" placeholder="Descripción" rows="3" required></textarea>
+      
+      <div class="actions">
+        <button type="submit" class="btn-save">Guardar Cambios</button>
+        <button type="button" @click="handleDelete" class="btn-delete">Eliminar Receta</button>
+      </div>
+    </form>
+  </div>
+</template>
+
+<script setup>
+import { reactive } from 'vue';
+import { useRecipeStore } from '../stores/recipeStore';
+
+const props = defineProps({ recipe: Object });
+const emit = defineEmits(['close']);
+const store = useRecipeStore();
+
+const form = reactive({ ...props.recipe });
+
+const handleUpdate = () => {
+  store.updateRecipe(form);
+  alert('¡Receta actualizada con éxito!');
+  emit('close');
+};
+
+const handleDelete = () => {
+  if (confirm('¿Estás seguro de eliminar esta receta?')) {
+    store.deleteRecipe(form.id);
+    alert('Receta eliminada.');
+    emit('close');
+  }
+};
+</script>
+
+<style scoped>
+.edit-container { max-width: 500px; margin: 0 auto; background: #fff; padding: 1.5rem; border-radius: 8px; border: 1px solid #cbd5e1; }
+input, textarea { width: 100%; padding: 0.5rem; margin-bottom: 1rem; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; }
+.actions { display: flex; gap: 1rem; }
+.btn-save { background: #2563eb; color: white; border: none; padding: 0.6rem 1rem; border-radius: 4px; cursor: pointer; flex: 1; }
+.btn-delete { background: #dc2626; color: white; border: none; padding: 0.6rem 1rem; border-radius: 4px; cursor: pointer; flex: 1; }
+</style>

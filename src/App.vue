@@ -4,7 +4,10 @@
       <h1>ChefCompartido</h1>
       <nav class="nav">
         <button :class="{ active: currentTab === 'catalog' }" @click="currentTab = 'catalog'">Catálogo</button>
-        <button :class="{ active: currentTab === 'create' }" @click="currentTab = 'create'">+ Publicar Receta</button>
+        <button
+          :class="{ active: currentTab === 'create' }"
+          @click="openCreate"> + Publicar Receta
+        </button>
         <button :class="{ active: currentTab === 'auth' }" @click="currentTab = 'auth'">Cuenta / Perfil</button>
       </nav>
     </header>
@@ -49,6 +52,7 @@ import CreateRecipeView from './views/CreateRecipeView.vue';
 import LoginView from './views/LoginView.vue';
 import RegisterView from './views/RegisterView.vue';
 import ProfileView from './views/ProfileView.vue';
+import { authService } from './services/authService';
 
 const currentTab = ref('catalog');
 const selectedRecipe = ref(null);
@@ -60,6 +64,17 @@ const openDetail = (id) => {
 const onRecipeCreated = () => {
   currentTab.value = 'catalog';
 };
+
+const openCreate = () => {
+  if (!authService.isAuthenticated.value) {
+    alert('Debes iniciar sesión para publicar una receta.');
+    currentTab.value = 'auth';
+    return;
+  }
+
+  currentTab.value = 'create';
+};
+
 </script>
 
 <style scoped>

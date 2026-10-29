@@ -85,7 +85,8 @@ const form = reactive({
   difficulty: '',
   description: '',
   ingredients: [''],
-  steps: ['']
+  steps: [''],
+  image: ''
 });
 
 const addIngredient = () => form.ingredients.push('');
@@ -95,9 +96,18 @@ const addStep = () => form.steps.push('');
 const removeStep = (idx) => form.steps.splice(idx, 1);
 
 const submitRecipe = async () => {
-  await recipeService.create({ ...form });
-  alert('¡Receta publicada exitosamente!');
-  emit('recipe-created');
+  try {
+    await recipeService.create({
+      ...form,
+      ingredients: [...form.ingredients],
+      steps: [...form.steps]
+    });
+
+    alert('Receta publicada exitosamente.');
+    emit('recipe-created');
+  } catch (error) {
+    alert(error.message);
+  }
 };
 </script>
 
