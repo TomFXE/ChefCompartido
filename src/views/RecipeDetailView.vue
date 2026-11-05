@@ -251,6 +251,37 @@ const formatDate = (date) =>
 </script>
 
 <style scoped>
+
+img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  @media (max-width: 600px) {
+    .content-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .comment-header {
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .stars {
+      flex-wrap: wrap;
+    }
+
+    .comment-actions {
+      align-items: stretch;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .btn-submit {
+      width: 100%;
+    }
+  }
+
 .detail-container {
   background: #ffffff;
   padding: 1.5rem;
